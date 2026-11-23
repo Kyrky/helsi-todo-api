@@ -1,5 +1,6 @@
 using Helsi.TodoApi.Api.Contracts;
 using Helsi.TodoApi.Api.Extensions;
+using Helsi.TodoApi.Api.Filters;
 using Helsi.TodoApi.Application.Abstractions;
 using Helsi.TodoApi.Application.Common;
 using Helsi.TodoApi.Application.Dtos;
@@ -9,9 +10,10 @@ namespace Helsi.TodoApi.Api.Controllers
 {
     [ApiController]
     [Route("api/todo-lists")]
+    [RequireUserId]
     public sealed class TodoListsController(ITodoListService todoListService) : ControllerBase
     {
-        private const string UserIdHeader = "X-User-Id";
+        private const string UserIdHeader = RequireUserIdAttribute.HeaderName;
 
         [HttpPost]
         public async Task<IActionResult> Create(

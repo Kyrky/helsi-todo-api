@@ -8,8 +8,17 @@ namespace Helsi.TodoApi.Application.Services
 {
     internal sealed class TodoListService(ITodoListRepository repository, TimeProvider timeProvider, IMapper mapper) : ITodoListService
     {
+        private const int TitleMaxLength = 255;
+        private const int MaxPageSize = 100;
+
         public async Task<Result<TodoListDto>> CreateAsync(Guid userId, string title, CancellationToken ct)
         {
+            Error? titleError = ValidateTitle(title);
+            if (titleError != null)
+            {
+                return Result.Failure<TodoListDto>(titleError);
+            }
+
             TodoList todoList = new TodoList
             {
                 Id = Guid.NewGuid(),
@@ -36,6 +45,16 @@ namespace Helsi.TodoApi.Application.Services
 
         public async Task<Result<PagedResult<TodoListSummaryDto>>> GetListAsync(Guid userId, int page, int pageSize, CancellationToken ct)
         {
+            if (page < 1)
+            {
+                return Result.Failure<PagedResult<TodoListSummaryDto>>(TodoListErrors.PageInvalid);
+            }
+
+            if (pageSize < 1 || pageSize > MaxPageSize)
+            {
+                return Result.Failure<PagedResult<TodoListSummaryDto>>(TodoListErrors.PageSizeInvalid);
+            }
+
             PagedResult<TodoList> todoLists = await repository.GetPageForUserAsync(userId, page, pageSize, ct);
             List<TodoListSummaryDto> items = mapper.Map<List<TodoListSummaryDto>>(todoLists.Items);
             PagedResult<TodoListSummaryDto> result = new PagedResult<TodoListSummaryDto>(items, todoLists.TotalCount, todoLists.Page, todoLists.PageSize);
@@ -45,6 +64,12 @@ namespace Helsi.TodoApi.Application.Services
 
         public async Task<Result<TodoListDto>> UpdateAsync(Guid userId, Guid id, string title, CancellationToken ct)
         {
+            Error? titleError = ValidateTitle(title);
+            if (titleError != null)
+            {
+                return Result.Failure<TodoListDto>(titleError);
+            }
+
             TodoList? todoList = await GetAccessibleTodoListAsync(userId, id, ct);
             if (todoList == null)
             {
@@ -143,6 +168,21 @@ namespace Helsi.TodoApi.Application.Services
             }
 
             return todoList;
+        }
+
+        private static Error? ValidateTitle(string? title)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                return TodoListErrors.TitleEmpty;
+            }
+
+            if (title.Trim().Length > TitleMaxLength)
+            {
+                return TodoListErrors.TitleTooLong;
+            }
+
+            return null;
         }
 
         private static bool HasAccess(TodoList todoList, Guid userId)

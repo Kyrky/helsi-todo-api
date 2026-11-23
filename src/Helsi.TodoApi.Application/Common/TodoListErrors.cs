@@ -8,8 +8,11 @@ namespace Helsi.TodoApi.Application.Common
         public static readonly Error TitleTooLong =
             Error.Validation("TodoList.TitleTooLong", "Title must be at most 255 characters.");
 
-        public static readonly Error OwnerRequired =
-            Error.Validation("TodoList.OwnerRequired", "Owner id is required.");
+        public static readonly Error PageInvalid =
+            Error.Validation("TodoList.PageInvalid", "Page must be 1 or greater.");
+
+        public static readonly Error PageSizeInvalid =
+            Error.Validation("TodoList.PageSizeInvalid", "Page size must be between 1 and 100.");
 
         public static readonly Error UserRequired =
             Error.Validation("TodoList.UserRequired", "User id is required.");
