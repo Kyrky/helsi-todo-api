@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Helsi.TodoApi.Api/Helsi.TodoApi.Api.csproj" />
+    <Project Path="src/Helsi.TodoApi.Application/Helsi.TodoApi.Application.csproj" />
+    <Project Path="src/Helsi.TodoApi.Domain/Helsi.TodoApi.Domain.csproj" />
+    <Project Path="src/Helsi.TodoApi.Infrastructure/Helsi.TodoApi.Infrastructure.csproj" />
+  </Folder>
+</Solution>
