@@ -13,9 +13,9 @@ namespace Helsi.TodoApi.Infrastructure.Persistence
                 await database.RunCommandAsync<BsonDocument>(new BsonDocument("ping", 1), cancellationToken: cancellationToken);
                 return HealthCheckResult.Healthy("MongoDB is reachable.");
             }
-            catch (Exception exception)
+            catch (Exception ex)
             {
-                return HealthCheckResult.Unhealthy("MongoDB is not reachable.", exception);
+                return HealthCheckResult.Unhealthy("MongoDB is not reachable.", ex);
             }
         }
     }

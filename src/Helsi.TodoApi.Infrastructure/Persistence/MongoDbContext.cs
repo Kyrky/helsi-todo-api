@@ -3,12 +3,8 @@ using MongoDB.Driver;
 
 namespace Helsi.TodoApi.Infrastructure.Persistence
 {
-    internal sealed class MongoDbContext
+    internal sealed class MongoDbContext(IMongoDatabase database)
     {
-        public MongoDbContext(IMongoDatabase database)
-        {
-            TodoLists = database.GetCollection<TodoList>("todolists");
-        }
-        public IMongoCollection<TodoList> TodoLists { get; }
+        public IMongoCollection<TodoList> TodoLists { get; } = database.GetCollection<TodoList>("todoLists");
     }
 }
