@@ -31,6 +31,17 @@ Then the API is on http://localhost:5094 (Swagger at `/swagger`, database check 
 
 There is no login. Every request says who the user is in the `X-User-Id` header (a GUID). If the header is missing or empty, the API answers `400`.
 
+### Tests
+
+```bash
+dotnet test
+```
+
+| Project | What it checks | Needs |
+|---|---|---|
+| `tests/Helsi.TodoApi.UnitTests` | every rule in `TodoListService` (titles, paging, who can read, change, share and delete) against an in-memory repository | nothing |
+| `tests/Helsi.TodoApi.IntegrationTests` | the real API over HTTP with a real MongoDB started by Testcontainers: status codes, the `X-User-Id` header, the whole sharing flow, feed order and paging | Docker running |
+
 ### How the code is split
 
 ```
@@ -160,6 +171,17 @@ dotnet run --project src/Helsi.TodoApi.Api --launch-profile http
 Тоді API на http://localhost:5094 (Swagger на `/swagger`, перевірка бази на `/health`).
 
 Входу в систему немає. Кожен запит каже, хто користувач, у заголовку `X-User-Id` (GUID). Якщо заголовка немає або він порожній, API відповідає `400`.
+
+### Тести
+
+```bash
+dotnet test
+```
+
+| Проєкт | Що перевіряє | Що потрібно |
+|---|---|---|
+| `tests/Helsi.TodoApi.UnitTests` | кожне правило `TodoListService` (назва, пагінація, хто може читати, змінювати, ділитися і видаляти) на репозиторії в пам'яті | нічого |
+| `tests/Helsi.TodoApi.IntegrationTests` | справжній API через HTTP зі справжньою MongoDB, яку піднімає Testcontainers: коди відповідей, заголовок `X-User-Id`, увесь сценарій спільного доступу, порядок і пагінація стрічки | запущений Docker |
 
 ### Як поділений код
 

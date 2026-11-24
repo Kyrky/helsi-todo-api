@@ -61,3 +61,6 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+// Lets WebApplicationFactory<Program> in the integration tests see the entry point.
+public partial class Program;
