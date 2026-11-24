@@ -13,20 +13,8 @@ namespace Helsi.TodoApi.Application.Services
         IMapper mapper,
         ILogger<TodoListService> logger) : ITodoListService
     {
-        private const int TitleMaxLength = 255;
-        private const int MaxPageSize = 100;
-
-        // Keeps (page - 1) * pageSize within int, so a huge page can't overflow the skip.
-        private const int MaxPage = int.MaxValue / MaxPageSize;
-
         public async Task<Result<TodoListDto>> CreateAsync(Guid userId, string title, CancellationToken ct)
         {
-            Error? titleError = ValidateTitle(title);
-            if (titleError != null)
-            {
-                return Result.Failure<TodoListDto>(titleError);
-            }
-
             TodoList todoList = new TodoList
             {
                 Id = Guid.NewGuid(),
@@ -54,16 +42,6 @@ namespace Helsi.TodoApi.Application.Services
 
         public async Task<Result<PagedResult<TodoListSummaryDto>>> GetListAsync(Guid userId, int page, int pageSize, CancellationToken ct)
         {
-            if (page < 1 || page > MaxPage)
-            {
-                return Result.Failure<PagedResult<TodoListSummaryDto>>(TodoListErrors.PageInvalid);
-            }
-
-            if (pageSize < 1 || pageSize > MaxPageSize)
-            {
-                return Result.Failure<PagedResult<TodoListSummaryDto>>(TodoListErrors.PageSizeInvalid);
-            }
-
             PagedResult<TodoList> todoLists = await repository.GetPageForUserAsync(userId, page, pageSize, ct);
             List<TodoListSummaryDto> items = mapper.Map<List<TodoListSummaryDto>>(todoLists.Items);
             PagedResult<TodoListSummaryDto> result = new PagedResult<TodoListSummaryDto>(items, todoLists.TotalCount, todoLists.Page, todoLists.PageSize);
@@ -73,12 +51,6 @@ namespace Helsi.TodoApi.Application.Services
 
         public async Task<Result<TodoListDto>> UpdateAsync(Guid userId, Guid id, string title, CancellationToken ct)
         {
-            Error? titleError = ValidateTitle(title);
-            if (titleError != null)
-            {
-                return Result.Failure<TodoListDto>(titleError);
-            }
-
             TodoList? todoList = await repository.RenameAsync(id, userId, title.Trim(), ct);
             if (todoList == null)
             {
@@ -120,11 +92,6 @@ namespace Helsi.TodoApi.Application.Services
             if (todoList == null)
             {
                 return Result.Failure(TodoListErrors.NotFound);
-            }
-
-            if (targetUserId == Guid.Empty)
-            {
-                return Result.Failure(TodoListErrors.UserRequired);
             }
 
             if (IsOwner(todoList, targetUserId))
@@ -194,21 +161,6 @@ namespace Helsi.TodoApi.Application.Services
             }
 
             return todoList;
-        }
-
-        private static Error? ValidateTitle(string? title)
-        {
-            if (string.IsNullOrWhiteSpace(title))
-            {
-                return TodoListErrors.TitleEmpty;
-            }
-
-            if (title.Trim().Length > TitleMaxLength)
-            {
-                return TodoListErrors.TitleTooLong;
-            }
-
-            return null;
         }
 
         // MongoDB stores dates in milliseconds; trimming here makes the 201 response match later reads.

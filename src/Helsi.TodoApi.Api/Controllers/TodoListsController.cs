@@ -33,11 +33,10 @@ namespace Helsi.TodoApi.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetList(
             [FromHeader(Name = UserIdHeader)] Guid userId,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 20,
-            CancellationToken ct = default)
+            [FromQuery] GetTodoListsQuery query,
+            CancellationToken ct)
         {
-            Result<PagedResult<TodoListSummaryDto>> result = await todoListService.GetListAsync(userId, page, pageSize, ct);
+            Result<PagedResult<TodoListSummaryDto>> result = await todoListService.GetListAsync(userId, query.Page, query.PageSize, ct);
             return result.ToActionResult();
         }
 

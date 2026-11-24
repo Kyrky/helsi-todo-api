@@ -43,32 +43,6 @@ namespace Helsi.TodoApi.UnitTests.Services
             Assert.NotNull(_repository.Stored(result.Value.Id));
         }
 
-        [Theory]
-        [InlineData("")]
-        [InlineData("   ")]
-        public async Task Create_EmptyTitle_ReturnsTitleEmpty(string title)
-        {
-            Result<TodoListDto> result = await _service.CreateAsync(Owner, title, CancellationToken.None);
-
-            Assert.Equal(TodoListErrors.TitleEmpty, result.Error);
-        }
-
-        [Fact]
-        public async Task Create_TitleLongerThan255_ReturnsTitleTooLong()
-        {
-            Result<TodoListDto> result = await _service.CreateAsync(Owner, new string('a', 256), CancellationToken.None);
-
-            Assert.Equal(TodoListErrors.TitleTooLong, result.Error);
-        }
-
-        [Fact]
-        public async Task Create_TitleOf255Characters_Succeeds()
-        {
-            Result<TodoListDto> result = await _service.CreateAsync(Owner, new string('a', 255), CancellationToken.None);
-
-            Assert.True(result.IsSuccess);
-        }
-
         [Fact]
         public async Task GetById_OwnerAndSharedUser_CanRead()
         {
@@ -110,26 +84,6 @@ namespace Helsi.TodoApi.UnitTests.Services
             Assert.Equal(new[] { shared.Id, older.Id }, result.Value.Items.Select(item => item.Id));
         }
 
-        [Theory]
-        [InlineData(0, 20)]
-        [InlineData(-1, 20)]
-        public async Task GetList_PageBelowOne_ReturnsPageInvalid(int page, int pageSize)
-        {
-            Result<PagedResult<TodoListSummaryDto>> result = await _service.GetListAsync(Owner, page, pageSize, CancellationToken.None);
-
-            Assert.Equal(TodoListErrors.PageInvalid, result.Error);
-        }
-
-        [Theory]
-        [InlineData(0)]
-        [InlineData(101)]
-        public async Task GetList_PageSizeOutOfRange_ReturnsPageSizeInvalid(int pageSize)
-        {
-            Result<PagedResult<TodoListSummaryDto>> result = await _service.GetListAsync(Owner, 1, pageSize, CancellationToken.None);
-
-            Assert.Equal(TodoListErrors.PageSizeInvalid, result.Error);
-        }
-
         [Fact]
         public async Task Update_SharedUser_CanRename()
         {
@@ -151,16 +105,6 @@ namespace Helsi.TodoApi.UnitTests.Services
 
             Assert.Equal(TodoListErrors.NotFound, result.Error);
             Assert.Equal(list.Title, _repository.Stored(list.Id)!.Title);
-        }
-
-        [Fact]
-        public async Task Update_EmptyTitle_ReturnsTitleEmpty()
-        {
-            TodoList list = SeedList();
-
-            Result<TodoListDto> result = await _service.UpdateAsync(Owner, list.Id, " ", CancellationToken.None);
-
-            Assert.Equal(TodoListErrors.TitleEmpty, result.Error);
         }
 
         [Fact]
@@ -238,16 +182,6 @@ namespace Helsi.TodoApi.UnitTests.Services
             Result result = await _service.ShareAsync(Friend, list.Id, Owner, CancellationToken.None);
 
             Assert.Equal(TodoListErrors.CannotShareWithOwner, result.Error);
-        }
-
-        [Fact]
-        public async Task Share_EmptyUserId_ReturnsUserRequired()
-        {
-            TodoList list = SeedList();
-
-            Result result = await _service.ShareAsync(Owner, list.Id, Guid.Empty, CancellationToken.None);
-
-            Assert.Equal(TodoListErrors.UserRequired, result.Error);
         }
 
         [Fact]

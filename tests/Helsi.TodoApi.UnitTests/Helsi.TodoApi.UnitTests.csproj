@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Helsi.TodoApi.Application\Helsi.TodoApi.Application.csproj" />
     <ProjectReference Include="..\..\src\Helsi.TodoApi.Domain\Helsi.TodoApi.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Helsi.TodoApi.Api\Helsi.TodoApi.Api.csproj" />
   </ItemGroup>
 
 </Project>

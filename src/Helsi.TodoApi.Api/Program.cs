@@ -1,3 +1,4 @@
+using FluentValidation;
 using Helsi.TodoApi.Api.Extensions;
 using Helsi.TodoApi.Api.Filters;
 using Helsi.TodoApi.Application;
@@ -19,7 +20,10 @@ try
 
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
-    builder.Services.AddControllers()
+    builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+    // Order 1: after the X-User-Id check, so a missing header is reported first.
+    builder.Services.AddControllers(options => options.Filters.Add<ValidationFilter>(1))
         .ConfigureApiBehaviorOptions(options => options.InvalidModelStateResponseFactory = InvalidModelStateResponse.Create);
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
