@@ -1,4 +1,4 @@
-﻿using Helsi.TodoApi.Application.Abstractions;
+using Helsi.TodoApi.Application.Abstractions;
 using Helsi.TodoApi.Application.Common;
 using Helsi.TodoApi.Domain.Entities;
 using Helsi.TodoApi.Infrastructure.Persistence;
@@ -39,14 +39,62 @@ namespace Helsi.TodoApi.Infrastructure.Repositories
             await context.TodoLists.InsertOneAsync(todoList, cancellationToken: ct);
         }
 
-        public async Task UpdateAsync(TodoList todoList, CancellationToken ct)
+        public async Task<TodoList?> RenameAsync(Guid id, Guid userId, string title, CancellationToken ct)
         {
-            await context.TodoLists.ReplaceOneAsync(ById(todoList.Id), todoList, cancellationToken: ct);
+            UpdateDefinition<TodoList> update = Builders<TodoList>.Update.Set(todoList => todoList.Title, title);
+            FindOneAndUpdateOptions<TodoList> options = new FindOneAndUpdateOptions<TodoList> { ReturnDocument = ReturnDocument.After };
+
+            return await context.TodoLists.FindOneAndUpdateAsync(AccessibleBy(id, userId), update, options, ct);
         }
 
-        public async Task DeleteAsync(Guid id, CancellationToken ct)
+        // $addToSet skips a user who is already there, so repeated or parallel shares never duplicate.
+        public async Task<WriteResult> AddShareAsync(Guid id, Guid userId, Guid targetUserId, CancellationToken ct)
         {
-            await context.TodoLists.DeleteOneAsync(ById(id), ct);
+            FilterDefinition<TodoList> filter = Builders<TodoList>.Filter.And(
+                AccessibleBy(id, userId),
+                Builders<TodoList>.Filter.Ne(todoList => todoList.OwnerId, targetUserId));
+            UpdateDefinition<TodoList> update = Builders<TodoList>.Update.AddToSet(todoList => todoList.SharedWith, targetUserId);
+
+            UpdateResult result = await context.TodoLists.UpdateOneAsync(filter, update, cancellationToken: ct);
+            return ToWriteResult(result);
+        }
+
+        public async Task<WriteResult> RemoveShareAsync(Guid id, Guid userId, Guid targetUserId, CancellationToken ct)
+        {
+            UpdateDefinition<TodoList> update = Builders<TodoList>.Update.Pull(todoList => todoList.SharedWith, targetUserId);
+
+            UpdateResult result = await context.TodoLists.UpdateOneAsync(AccessibleBy(id, userId), update, cancellationToken: ct);
+            return ToWriteResult(result);
+        }
+
+        public async Task<bool> DeleteAsync(Guid id, Guid ownerId, CancellationToken ct)
+        {
+            FilterDefinition<TodoList> filter = Builders<TodoList>.Filter.And(
+                ById(id),
+                Builders<TodoList>.Filter.Eq(todoList => todoList.OwnerId, ownerId));
+
+            DeleteResult result = await context.TodoLists.DeleteOneAsync(filter, ct);
+            return result.DeletedCount > 0;
+        }
+
+        private static WriteResult ToWriteResult(UpdateResult result)
+        {
+            if (result.MatchedCount == 0)
+            {
+                return WriteResult.NotFound;
+            }
+
+            return result.ModifiedCount > 0 ? WriteResult.Changed : WriteResult.Unchanged;
+        }
+
+        // The same access rule as in the service, checked by the database at write time.
+        private static FilterDefinition<TodoList> AccessibleBy(Guid id, Guid userId)
+        {
+            return Builders<TodoList>.Filter.And(
+                ById(id),
+                Builders<TodoList>.Filter.Or(
+                    Builders<TodoList>.Filter.Eq(todoList => todoList.OwnerId, userId),
+                    Builders<TodoList>.Filter.AnyEq(todoList => todoList.SharedWith, userId)));
         }
 
         private static FilterDefinition<TodoList> ById(Guid id)

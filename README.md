@@ -117,7 +117,8 @@ Errors come back as `ProblemDetails`. The `title` field holds a machine-readable
 |---|---|---|
 | Sharing lives inside the list document, in a `sharedWith` array | one read gets the list with everyone who can see it, one write changes both | the array grows with every share, fine for a handful of users per list |
 | Sharing twice, or removing a share that isn't there, just succeeds | a retried request can't fail with a confusing error | the client can't tell "added" from "was already there" |
-| Updates replace the whole document (`ReplaceOne`) | simple: load, change, save | if two people change the same list at the same moment, one change can be lost. A version field or atomic `$addToSet` / `$pull` would fix that |
+| Each write changes one field atomically (`$set` for the title, `$addToSet` / `$pull` for sharing) and repeats the access rule in its filter | parallel edits of one list never overwrite each other; a user whose access was just removed can't write; a write to a list deleted mid-request returns `404` | access is checked in two places: in the service for reads and error messages, and in the database filter for writes |
+| Writes use `w: majority` with journaling | an OK response means the write is on disk, whatever the server defaults are | slightly slower writes on a replica set |
 
 ---
 
@@ -236,4 +237,5 @@ curl "$B?page=1&pageSize=20" -H "X-User-Id: $FRIEND"
 |---|---|---|
 | Доступи лежать прямо в документі списку, в масиві `sharedWith` | одне читання дає і список, і всіх, хто його бачить, один запис змінює все разом | масив росте з кожним доступом, для кількох користувачів на список це нормально |
 | Поділитися вдруге або прибрати доступ, якого немає, це просто успіх | повторний запит не впаде з незрозумілою помилкою | клієнт не відрізнить «додано» від «вже було» |
-| Зміни перезаписують увесь документ (`ReplaceOne`) | просто: завантажив, змінив, зберіг | якщо двоє одночасно змінять той самий список, одна зміна може загубитися. Лікується полем версії або атомарними `$addToSet` / `$pull` |
+| Кожен запис атомарно змінює одне поле (`$set` для назви, `$addToSet` / `$pull` для доступів) і повторює правило доступу у своєму фільтрі | одночасні зміни одного списку не перезаписують одна одну; користувач, у якого щойно забрали доступ, нічого не запише; запис у список, видалений посеред запиту, дає `404` | доступ перевіряється у двох місцях: у сервісі для читання й повідомлень про помилки та у фільтрі бази для запису |
+| Записи йдуть з `w: majority` і журналом | відповідь OK означає, що запис уже на диску, незалежно від налаштувань сервера | трохи повільніші записи на replica set |

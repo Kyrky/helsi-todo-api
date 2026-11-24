@@ -70,14 +70,11 @@ namespace Helsi.TodoApi.Application.Services
                 return Result.Failure<TodoListDto>(titleError);
             }
 
-            TodoList? todoList = await GetAccessibleTodoListAsync(userId, id, ct);
+            TodoList? todoList = await repository.RenameAsync(id, userId, title.Trim(), ct);
             if (todoList == null)
             {
                 return Result.Failure<TodoListDto>(TodoListErrors.NotFound);
             }
-
-            todoList.Title = title.Trim();
-            await repository.UpdateAsync(todoList, ct);
 
             return Result.Success(mapper.Map<TodoListDto>(todoList));
         }
@@ -95,7 +92,10 @@ namespace Helsi.TodoApi.Application.Services
                 return Result.Failure(TodoListErrors.OnlyOwnerCanDelete);
             }
 
-            await repository.DeleteAsync(todoList.Id, ct);
+            if (!await repository.DeleteAsync(todoList.Id, userId, ct))
+            {
+                return Result.Failure(TodoListErrors.NotFound);
+            }
 
             return Result.Success();
         }
@@ -119,10 +119,10 @@ namespace Helsi.TodoApi.Application.Services
             }
 
             // Sharing twice with the same user changes nothing and is still a success.
-            if (!todoList.SharedWith.Contains(targetUserId))
+            WriteResult write = await repository.AddShareAsync(todoList.Id, userId, targetUserId, ct);
+            if (write == WriteResult.NotFound)
             {
-                todoList.SharedWith.Add(targetUserId);
-                await repository.UpdateAsync(todoList, ct);
+                return Result.Failure(TodoListErrors.NotFound);
             }
 
             return Result.Success();
@@ -143,15 +143,10 @@ namespace Helsi.TodoApi.Application.Services
 
         public async Task<Result> UnshareAsync(Guid userId, Guid id, Guid targetUserId, CancellationToken ct)
         {
-            TodoList? todoList = await GetAccessibleTodoListAsync(userId, id, ct);
-            if (todoList == null)
+            WriteResult write = await repository.RemoveShareAsync(id, userId, targetUserId, ct);
+            if (write == WriteResult.NotFound)
             {
                 return Result.Failure(TodoListErrors.NotFound);
-            }
-
-            if (todoList.SharedWith.Remove(targetUserId))
-            {
-                await repository.UpdateAsync(todoList, ct);
             }
 
             return Result.Success();

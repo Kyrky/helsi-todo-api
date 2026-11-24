@@ -20,7 +20,11 @@ namespace Helsi.TodoApi.Infrastructure
 
             ConfigureMongoSerialization();
 
-            services.AddSingleton<IMongoClient>(new MongoClient(connectionString));
+            // Acknowledge writes only once they're journaled on a majority, so an OK response survives a crash.
+            MongoClientSettings clientSettings = MongoClientSettings.FromConnectionString(connectionString);
+            clientSettings.WriteConcern = WriteConcern.WMajority.With(journal: true);
+
+            services.AddSingleton<IMongoClient>(new MongoClient(clientSettings));
             services.AddSingleton(sp => sp.GetRequiredService<IMongoClient>().GetDatabase(databaseName));
             services.AddSingleton<MongoDbContext>();
             services.AddHostedService<MongoIndexInitializer>();
