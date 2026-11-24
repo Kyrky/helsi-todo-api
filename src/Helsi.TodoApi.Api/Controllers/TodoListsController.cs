@@ -21,7 +21,7 @@ namespace Helsi.TodoApi.Api.Controllers
             [FromBody] CreateTodoListRequest request,
             CancellationToken ct)
         {
-            Result<TodoListDto> result = await todoListService.CreateAsync(userId, request.Title, ct);
+            Result<TodoListDto> result = await todoListService.CreateAsync(userId, request.Title ?? string.Empty, ct);
             if (result.IsFailure)
             {
                 return result.Error!.ToProblemResult();
@@ -58,7 +58,7 @@ namespace Helsi.TodoApi.Api.Controllers
             [FromBody] UpdateTodoListRequest request,
             CancellationToken ct)
         {
-            Result<TodoListDto> result = await todoListService.UpdateAsync(userId, id, request.Title, ct);
+            Result<TodoListDto> result = await todoListService.UpdateAsync(userId, id, request.Title ?? string.Empty, ct);
             return result.ToActionResult();
         }
 

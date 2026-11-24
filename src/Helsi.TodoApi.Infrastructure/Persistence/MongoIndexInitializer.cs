@@ -18,11 +18,11 @@ namespace Helsi.TodoApi.Infrastructure.Persistence
             List<CreateIndexModel<TodoList>> indexes = new List<CreateIndexModel<TodoList>>
             {
                 new CreateIndexModel<TodoList>(
-                    keys.Ascending(todoList => todoList.OwnerId).Descending(todoList => todoList.CreatedAt),
-                    new CreateIndexOptions { Name = "ownerId_createdAt" }),
+                    keys.Ascending(todoList => todoList.OwnerId).Descending(todoList => todoList.CreatedAt).Descending(todoList => todoList.Id),
+                    new CreateIndexOptions { Name = "ownerId_createdAt_id" }),
                 new CreateIndexModel<TodoList>(
-                    keys.Ascending(todoList => todoList.SharedWith).Descending(todoList => todoList.CreatedAt),
-                    new CreateIndexOptions { Name = "sharedWith_createdAt" })
+                    keys.Ascending(todoList => todoList.SharedWith).Descending(todoList => todoList.CreatedAt).Descending(todoList => todoList.Id),
+                    new CreateIndexOptions { Name = "sharedWith_createdAt_id" })
             };
 
             try

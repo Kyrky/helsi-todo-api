@@ -9,7 +9,7 @@ namespace Helsi.TodoApi.Application.Common
             Error.Validation("TodoList.TitleTooLong", "Title must be at most 255 characters.");
 
         public static readonly Error PageInvalid =
-            Error.Validation("TodoList.PageInvalid", "Page must be 1 or greater.");
+            Error.Validation("TodoList.PageInvalid", "Page must be between 1 and 21474836.");
 
         public static readonly Error PageSizeInvalid =
             Error.Validation("TodoList.PageSizeInvalid", "Page size must be between 1 and 100.");

@@ -11,6 +11,9 @@ namespace Helsi.TodoApi.Application.Services
         private const int TitleMaxLength = 255;
         private const int MaxPageSize = 100;
 
+        // Keeps (page - 1) * pageSize within int, so a huge page can't overflow the skip.
+        private const int MaxPage = int.MaxValue / MaxPageSize;
+
         public async Task<Result<TodoListDto>> CreateAsync(Guid userId, string title, CancellationToken ct)
         {
             Error? titleError = ValidateTitle(title);
@@ -24,7 +27,7 @@ namespace Helsi.TodoApi.Application.Services
                 Id = Guid.NewGuid(),
                 Title = title.Trim(),
                 OwnerId = userId,
-                CreatedAt = timeProvider.GetUtcNow().UtcDateTime
+                CreatedAt = TruncateToMilliseconds(timeProvider.GetUtcNow().UtcDateTime)
             };
 
             await repository.AddAsync(todoList, ct);
@@ -45,7 +48,7 @@ namespace Helsi.TodoApi.Application.Services
 
         public async Task<Result<PagedResult<TodoListSummaryDto>>> GetListAsync(Guid userId, int page, int pageSize, CancellationToken ct)
         {
-            if (page < 1)
+            if (page < 1 || page > MaxPage)
             {
                 return Result.Failure<PagedResult<TodoListSummaryDto>>(TodoListErrors.PageInvalid);
             }
@@ -178,6 +181,12 @@ namespace Helsi.TodoApi.Application.Services
             }
 
             return null;
+        }
+
+        // MongoDB stores dates in milliseconds; trimming here makes the 201 response match later reads.
+        private static DateTime TruncateToMilliseconds(DateTime value)
+        {
+            return value.AddTicks(-(value.Ticks % TimeSpan.TicksPerMillisecond));
         }
 
         private static bool HasAccess(TodoList todoList, Guid userId)

@@ -70,14 +70,14 @@ Actions:
 | Get who it's shared with | `GET /api/todo-lists/{id}/shares` → `200` | `GetSharesAsync` |
 | Stop sharing with a user | `DELETE /api/todo-lists/{id}/shares/{userId}` → `204` | `UnshareAsync` |
 
-Paging: `page` starts at 1, `pageSize` is 1 to 100, and the response also has `totalCount`. Lists come newest first. Two lists created at the same moment are ordered by id, so pages don't shift.
+Paging: `page` is 1 to 21474836, `pageSize` is 1 to 100, and the response also has `totalCount`. Lists come newest first. Two lists created at the same moment are ordered by id, so pages don't shift.
 
 Access rules:
 
 | Rule | Where |
 |---|---|
 | My lists show only lists I own or that are shared with me | a database filter, `ownerId = me OR sharedWith contains me`, in `TodoListRepository.GetPageForUserAsync`, with an index for each half |
-| Get, update and manage sharing: owner or a user it's shared with | every such service method starts with `GetAccessibleTodoListAsync` |
+| Get, update and manage sharing: owner or a user it's shared with | reads go through `GetAccessibleTodoListAsync` in the service; writes repeat the rule in the database filter (`AccessibleBy` in the repository) |
 | Delete: owner only | `DeleteAsync` checks `IsOwner` |
 
 | Who | Get, update, sharing | Delete |
@@ -190,14 +190,14 @@ Api  ──►  Application  ──►  Domain
 | Подивитися, з ким поділено | `GET /api/todo-lists/{id}/shares` → `200` | `GetSharesAsync` |
 | Прибрати доступ користувачу | `DELETE /api/todo-lists/{id}/shares/{userId}` → `204` | `UnshareAsync` |
 
-Пагінація: `page` починається з 1, `pageSize` від 1 до 100, у відповіді є ще `totalCount`. Спершу нові списки. Якщо два списки створені в одну мить, порядок між ними визначає id, тож сторінки не з'їжджають.
+Пагінація: `page` від 1 до 21474836, `pageSize` від 1 до 100, у відповіді є ще `totalCount`. Спершу нові списки. Якщо два списки створені в одну мить, порядок між ними визначає id, тож сторінки не з'їжджають.
 
 Правила доступу:
 
 | Правило | Де |
 |---|---|
 | У «моїх списках» тільки ті, де я власник або з якими зі мною поділилися | фільтр у базі `ownerId = я АБО sharedWith містить мене` у `TodoListRepository.GetPageForUserAsync`, під кожну половину свій індекс |
-| Отримати, змінити, керувати доступом: власник або той, з ким поділилися | кожен такий метод сервісу спершу викликає `GetAccessibleTodoListAsync` |
+| Отримати, змінити, керувати доступом: власник або той, з ким поділилися | читання йде через `GetAccessibleTodoListAsync` у сервісі; записи повторюють правило у фільтрі бази (`AccessibleBy` у репозиторії) |
 | Видалити: тільки власник | `DeleteAsync` перевіряє `IsOwner` |
 
 | Хто | Отримати, змінити, доступи | Видалити |
