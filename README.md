@@ -8,16 +8,26 @@ A small REST API for todo lists that can be shared with other users. Built on .N
 
 ### Running it
 
-You need the .NET 8 SDK and MongoDB on `localhost:27017`. The connection string lives in `src/Helsi.TodoApi.Api/appsettings.json`.
+The quickest way is Docker. It starts the API and MongoDB together:
+
+```bash
+docker compose up --build
+```
+
+| What | Where |
+|---|---|
+| Swagger | http://localhost:8080/swagger |
+| Database check | http://localhost:8080/health |
+
+MongoDB from the container is published on port `27018`, so it doesn't clash with one you may already run on `27017`.
+
+Without Docker you need the .NET 8 SDK and MongoDB on `localhost:27017` (the connection string is in `src/Helsi.TodoApi.Api/appsettings.json`):
 
 ```bash
 dotnet run --project src/Helsi.TodoApi.Api --launch-profile http
 ```
 
-| What | Where |
-|---|---|
-| Swagger | http://localhost:5094/swagger |
-| Database check | http://localhost:5094/health |
+Then the API is on http://localhost:5094 (Swagger at `/swagger`, database check at `/health`).
 
 There is no login. Every request says who the user is in the `X-User-Id` header (a GUID). If the header is missing or empty, the API answers `400`.
 
@@ -91,7 +101,7 @@ Anyone else gets `404` instead of `403` on purpose: the API doesn't tell strange
 ### Example requests
 
 ```bash
-B=http://localhost:5094/api/todo-lists
+B=http://localhost:8080/api/todo-lists
 OWNER=11111111-1111-1111-1111-111111111111
 FRIEND=22222222-2222-2222-2222-222222222222
 
@@ -128,16 +138,26 @@ Errors come back as `ProblemDetails`. The `title` field holds a machine-readable
 
 ### Запуск
 
-Потрібні .NET 8 SDK і MongoDB на `localhost:27017`. Рядок підключення лежить у `src/Helsi.TodoApi.Api/appsettings.json`.
+Найшвидше через Docker, він піднімає API і MongoDB разом:
+
+```bash
+docker compose up --build
+```
+
+| Що | Де |
+|---|---|
+| Swagger | http://localhost:8080/swagger |
+| Перевірка бази | http://localhost:8080/health |
+
+MongoDB з контейнера доступна назовні на порту `27018`, щоб не конфліктувати з тією, що, можливо, вже працює на `27017`.
+
+Без Docker потрібні .NET 8 SDK і MongoDB на `localhost:27017` (рядок підключення в `src/Helsi.TodoApi.Api/appsettings.json`):
 
 ```bash
 dotnet run --project src/Helsi.TodoApi.Api --launch-profile http
 ```
 
-| Що | Де |
-|---|---|
-| Swagger | http://localhost:5094/swagger |
-| Перевірка бази | http://localhost:5094/health |
+Тоді API на http://localhost:5094 (Swagger на `/swagger`, перевірка бази на `/health`).
 
 Входу в систему немає. Кожен запит каже, хто користувач, у заголовку `X-User-Id` (GUID). Якщо заголовка немає або він порожній, API відповідає `400`.
 
@@ -211,7 +231,7 @@ Api  ──►  Application  ──►  Domain
 ### Приклади запитів
 
 ```bash
-B=http://localhost:5094/api/todo-lists
+B=http://localhost:8080/api/todo-lists
 OWNER=11111111-1111-1111-1111-111111111111
 FRIEND=22222222-2222-2222-2222-222222222222
 
