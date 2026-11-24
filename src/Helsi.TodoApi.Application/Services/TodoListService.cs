@@ -3,10 +3,15 @@ using Helsi.TodoApi.Application.Common;
 using Helsi.TodoApi.Application.Dtos;
 using Helsi.TodoApi.Domain.Entities;
 using MapsterMapper;
+using Microsoft.Extensions.Logging;
 
 namespace Helsi.TodoApi.Application.Services
 {
-    internal sealed class TodoListService(ITodoListRepository repository, TimeProvider timeProvider, IMapper mapper) : ITodoListService
+    internal sealed class TodoListService(
+        ITodoListRepository repository,
+        TimeProvider timeProvider,
+        IMapper mapper,
+        ILogger<TodoListService> logger) : ITodoListService
     {
         private const int TitleMaxLength = 255;
         private const int MaxPageSize = 100;
@@ -31,6 +36,7 @@ namespace Helsi.TodoApi.Application.Services
             };
 
             await repository.AddAsync(todoList, ct);
+            logger.LogInformation("Todo list {TodoListId} created by {UserId}", todoList.Id, userId);
 
             return Result.Success(mapper.Map<TodoListDto>(todoList));
         }
@@ -79,6 +85,8 @@ namespace Helsi.TodoApi.Application.Services
                 return Result.Failure<TodoListDto>(TodoListErrors.NotFound);
             }
 
+            logger.LogInformation("Todo list {TodoListId} renamed by {UserId}", todoList.Id, userId);
+
             return Result.Success(mapper.Map<TodoListDto>(todoList));
         }
 
@@ -92,6 +100,7 @@ namespace Helsi.TodoApi.Application.Services
 
             if (!IsOwner(todoList, userId))
             {
+                logger.LogWarning("User {UserId} tried to delete todo list {TodoListId} they do not own", userId, todoList.Id);
                 return Result.Failure(TodoListErrors.OnlyOwnerCanDelete);
             }
 
@@ -99,6 +108,8 @@ namespace Helsi.TodoApi.Application.Services
             {
                 return Result.Failure(TodoListErrors.NotFound);
             }
+
+            logger.LogInformation("Todo list {TodoListId} deleted by {UserId}", todoList.Id, userId);
 
             return Result.Success();
         }
@@ -128,6 +139,11 @@ namespace Helsi.TodoApi.Application.Services
                 return Result.Failure(TodoListErrors.NotFound);
             }
 
+            if (write == WriteResult.Changed)
+            {
+                logger.LogInformation("Todo list {TodoListId} shared with {TargetUserId} by {UserId}", todoList.Id, targetUserId, userId);
+            }
+
             return Result.Success();
         }
 
@@ -152,6 +168,11 @@ namespace Helsi.TodoApi.Application.Services
                 return Result.Failure(TodoListErrors.NotFound);
             }
 
+            if (write == WriteResult.Changed)
+            {
+                logger.LogInformation("Todo list {TodoListId} unshared from {TargetUserId} by {UserId}", id, targetUserId, userId);
+            }
+
             return Result.Success();
         }
 
@@ -160,8 +181,15 @@ namespace Helsi.TodoApi.Application.Services
         private async Task<TodoList?> GetAccessibleTodoListAsync(Guid userId, Guid id, CancellationToken ct)
         {
             TodoList? todoList = await repository.GetByIdAsync(id, ct);
-            if (todoList == null || !HasAccess(todoList, userId))
+            if (todoList == null)
             {
+                logger.LogDebug("Todo list {TodoListId} not found", id);
+                return null;
+            }
+
+            if (!HasAccess(todoList, userId))
+            {
+                logger.LogDebug("User {UserId} has no access to todo list {TodoListId}", userId, id);
                 return null;
             }
 
