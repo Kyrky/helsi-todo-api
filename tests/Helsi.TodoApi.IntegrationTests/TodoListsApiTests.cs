@@ -92,6 +92,25 @@ namespace Helsi.TodoApi.IntegrationTests
         }
 
         [Fact]
+        public async Task ConcurrentSharesAndRename_NoChangeIsLost()
+        {
+            Guid id = await CreateList(_owner, "Busy list");
+            List<Guid> users = Enumerable.Range(0, 20).Select(_ => Guid.NewGuid()).ToList();
+
+            List<Task<HttpResponseMessage>> requests = users
+                .Select(user => Send(HttpMethod.Post, $"{Lists}/{id}/shares", _owner, new { userId = user }))
+                .ToList();
+            requests.Add(Send(HttpMethod.Put, $"{Lists}/{id}", _owner, new { title = "Renamed while sharing" }));
+
+            HttpResponseMessage[] responses = await Task.WhenAll(requests);
+
+            Assert.All(responses, response => Assert.True(response.IsSuccessStatusCode));
+            TodoListBody list = (await (await Send(HttpMethod.Get, $"{Lists}/{id}", _owner)).Content.ReadFromJsonAsync<TodoListBody>())!;
+            Assert.Equal("Renamed while sharing", list.Title);
+            Assert.Equal(users.OrderBy(user => user), list.SharedWith.OrderBy(user => user));
+        }
+
+        [Fact]
         public async Task Feed_IsNewestFirstAndPaged()
         {
             Guid first = await CreateList(_owner, "First");
